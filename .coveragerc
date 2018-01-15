@@ -1,0 +1,22 @@
+# This file is part of thumbor-distributed-collage-filter.
+# https://github.com/globocom/thumbor-distributed-collage-filter
+
+# Licensed under the MIT license:
+# http://www.opensource.org/licenses/MIT-license
+# Copyright (c) 2018, Globo.com <thumbor@corp.globo.com>
+
+[run]
+omit =
+    *tests.py
+branch = True
+source =
+    thumbor_distributed_collage_filter
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    from urllib.parse import parse_qs
+    except ImportError:
