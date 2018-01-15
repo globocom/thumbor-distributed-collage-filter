@@ -2,6 +2,12 @@
 
 Distributed collage is a filter for creating side-by-side images.
 
+## Installing
+
+```
+    pip install thumbor-distributed-collage-filter
+```
+
 ## Usage
 
 In your thumbor.conf file, use the following:
