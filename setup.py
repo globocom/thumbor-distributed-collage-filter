@@ -50,9 +50,7 @@ Distributed collage is a filter for creating side-by-side images.
     install_requires=[
         # add your dependencies here
         # remember to use 'package-name>=x.y.z,<x.y+1.0' notation (this way you get bugfixes)
-        'thumbor',
-        'opencv-python',
-        'numpy',
+        'thumbor>=6.4.1',
     ],
     extras_require={
         'tests': tests_require,

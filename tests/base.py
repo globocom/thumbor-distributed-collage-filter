@@ -24,7 +24,7 @@ from six import StringIO
 from six.moves.urllib.parse import urlencode
 
 from thumbor.app import ThumborServiceApp
-from thumbor.context import Context, RequestParameters
+from thumbor.context import Context, RequestParameters, ServerParameters
 from thumbor.config import Config
 from thumbor.importer import Importer
 from thumbor.transformer import Transformer
@@ -109,6 +109,9 @@ def get_ssim(actual, expected):
             )
         )
 
+
+    actual = actual.convert('RGB')
+    expected = expected.convert('RGB')
     return compute_ssim(actual, expected)
 
 
@@ -188,7 +191,9 @@ class TestCase(AsyncHTTPTestCase):
         )
 
     def get_server(self):
-        return None
+        srv = ServerParameters(8888, "localhost", './tests/test.conf', None, 'DEBUG', None)
+        srv._security_key = 'MY_SECURE_KEY'
+        return srv
 
     def get_importer(self):
         return None
@@ -265,9 +270,18 @@ class FilterTestCase(PythonTestCase):
 
         req = RequestParameters()
 
-        context = Context(config=config, importer=importer)
+        srv = ServerParameters(8888, "localhost", './tests/test.conf', None, 'DEBUG', None)
+        srv._security_key = 'MY_SECURE_KEY'
+
+        context = Context(config=config, importer=importer, server=srv)
         context.request = req
         context.request.engine = context.modules.engine
+        context.request_handler = mock.MagicMock(
+            request=mock.MagicMock(
+                protocol='http',
+                host='localhost:8888',
+            )
+        )
 
         if config_context is not None:
             config_context(context)
@@ -310,7 +324,7 @@ class FilterTestCase(PythonTestCase):
 
         fltr.run(dummy_callback)
 
-        fltr.engine.image = fltr.engine.image.convert('RGB')
+        # fltr.engine.image = fltr.engine.image.convert('RGB')
 
         return fltr.engine.image
 
@@ -335,3 +349,48 @@ class DetectorTestCase(PythonTestCase):
         self.context = mock.Mock(request=mock.Mock(focal_points=[]))
         self.engine = PilEngine(self.context)
         self.context.modules.engine = self.engine
+
+
+class BaseTestCase(TestCase):
+    def get_fixture_path(self, name):
+        return './tests/fixtures/%s' % name
+
+    def get_config(self):
+        return Config(
+            DETECTORS=['thumbor.detectors.face_detector'],
+            FILTERS=['thumbor.filters.quality','thumbor_distributed_collage_filter.filter'],
+            DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER='thumbor.loaders.http_loader',
+            LOADER='thumbor.loaders.file_loader',
+            FILE_LOADER_ROOT_PATH=join(dirname(__file__), 'fixtures', 'filters')
+        )
+
+    def get_importer(self):
+        importer = Importer(self.config)
+        importer.import_modules()
+        return importer
+
+    def get_engine(self, buffer):
+        eng = self.importer.engine(self.context)
+        eng.load(buffer, None)
+        return eng
+
+    def get_ssim(self, actual, expected):
+        if actual.size[0] != expected.size[0] or actual.size[1] != expected.size[1]:
+            raise RuntimeError(
+                "Can't calculate SSIM for images of different sizes (one is %dx%d, the other %dx%d)." % (
+                    actual.size[0], actual.size[1],
+                    expected.size[0], expected.size[1],
+                )
+            )
+
+
+        actual = actual.convert('RGB')
+        expected = expected.convert('RGB')
+        return compute_ssim(actual, expected)
+
+    def get_fixture_path(self, name):
+        return './tests/fixtures/filters/%s' % name
+
+    def get_fixture(self, name):
+        im = Image.open(self.get_fixture_path(name))
+        return im.convert('RGB')
