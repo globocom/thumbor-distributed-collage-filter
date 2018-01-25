@@ -80,9 +80,13 @@ class Filter(BaseFilter):
                 'valign': 'middle',
                 'filters': ['quality(100)'],
             }
-            protocol = self.context.request_handler.request.protocol
-            host = self.context.request_handler.request.host
-            encrypted_url = '%s://%s%s' % (protocol, host, crypto.generate(**params))
+            thumbor_host = getattr(self.context.config, 'DISTRIBUTED_COLLAGE_FILTER_THUMBOR_SERVER_URL',
+                '%s://%s' % (
+                    self.context.request_handler.request.protocol,
+                    self.context.request_handler.request.host,
+                ),
+            )
+            encrypted_url = '%s%s' % (thumbor_host, crypto.generate(**params))
             image_ops.append(loader.load(self.context, encrypted_url))
 
         images = yield image_ops
