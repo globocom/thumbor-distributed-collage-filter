@@ -55,8 +55,9 @@ class Filter(BaseFilter):
             self.context.request.max_age = self.max_age
 
     def _calculate_dimensions(self):
-        self.image_width = math.floor(self.context.request.width / len(self.urls))
-        self.last_image_width = self.context.request.width - ((len(self.urls) - 1) * self.image_width)
+        width = self.context.request.width or self.context.transformer.get_target_dimensions()[0]
+        self.image_width = math.floor(width / len(self.urls))
+        self.last_image_width = width - ((len(self.urls) - 1) * self.image_width)
 
     @tornado.gen.coroutine
     def _fetch_images(self):
@@ -70,10 +71,10 @@ class Filter(BaseFilter):
 
         for i, url in enumerate(self.urls):
             width = self.image_width if i < len(self.urls) - 1 else self.last_image_width
-
+            height = self.context.request.height or self.context.transformer.get_target_dimensions()[1]
             params = {
                 'width': int(width),
-                'height': int(self.context.request.height),
+                'height': int(height),
                 'image_url': url,
                 'smart': True,
                 'halign': 'center',
