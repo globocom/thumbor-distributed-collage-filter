@@ -70,6 +70,12 @@ class DistributedCollageFilterTestCase(BaseTestCase):
         ssim = self.get_ssim(image, expected)
         expect(ssim).to_be_greater_than(0.89)
 
+    def test_with_four_images_and_zero_size(self):
+        image = self.get_filtered('|'.join(self.urls[:4]), width=0, height=0)
+        expected = self.get_fixture('distributed_collage_4i.png')
+        ssim = self.get_ssim(image, expected)
+        expect(ssim).to_be_greater_than(0.89)
+
     def test_with_two_images_centered_when_no_feature_detected(self):
         image = self.get_filtered('|'.join(self.urls[4:6]))
         expected = self.get_fixture('distributed_collage_2i_centered.png')
