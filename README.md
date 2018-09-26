@@ -25,7 +25,7 @@ TODO: Write docs for this filter.
 
 ## Authors
 
-Originally developed by Diego Fleury (@diegofleury).
+Originally developed by Diego Fleury (@dfleury).
 
 ## License
 
