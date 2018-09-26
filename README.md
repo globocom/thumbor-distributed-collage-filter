@@ -23,6 +23,10 @@ FILTERS = [
 
 TODO: Write docs for this filter.
 
+## Authors
+
+Originally developed by Diego Fleury (@diegofleury).
+
 ## License
 
 MIT Licensed.
