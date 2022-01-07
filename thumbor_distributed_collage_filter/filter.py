@@ -28,24 +28,24 @@ from libthumbor import CryptoURL
 class Filter(BaseFilter):
     MAX_IMAGES = 4
 
-    @filter_method(BaseFilter.String, BaseFilter.String, r'[^\)]+', async=True)
+    @filter_method(BaseFilter.String, BaseFilter.String, r"[^\)]+", async=True)
     @tornado.gen.coroutine
     def distributed_collage(self, callback, orientation, alignment, urls):
         self.callback = callback
         self.orientation = orientation
         self.alignment = alignment
-        self.urls = urls.split('|')
+        self.urls = urls.split("|")
         self.images = {}
 
         total = len(self.urls)
         if total > self.MAX_IMAGES:
-            logger.error('filters.distributed_collage: Too many images to join')
+            logger.error("filters.distributed_collage: Too many images to join")
             callback()
         elif total == 0:
-            logger.error('filters.distributed_collage: No images to join')
+            logger.error("filters.distributed_collage: No images to join")
             callback()
         else:
-            self.urls = self.urls[:self.MAX_IMAGES]
+            self.urls = self.urls[: self.MAX_IMAGES]
 
             self.max_age = self.context.config.MAX_AGE
 
@@ -55,7 +55,10 @@ class Filter(BaseFilter):
             self.context.request.max_age = self.max_age
 
     def _calculate_dimensions(self):
-        width = self.context.request.width or self.context.transformer.get_target_dimensions()[0]
+        width = (
+            self.context.request.width
+            or self.context.transformer.get_target_dimensions()[0]
+        )
         self.image_width = math.floor(width / len(self.urls))
         self.last_image_width = width - ((len(self.urls) - 1) * self.image_width)
 
@@ -64,52 +67,74 @@ class Filter(BaseFilter):
         crypto = CryptoURL(key=self.context.server.security_key)
 
         image_ops = []
-        if not hasattr(self.context.config, 'DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER'):
-            self.context.config.DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER = 'thumbor.loaders.http_loader'
-        self.context.modules.importer.import_item('DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER')
+        if not hasattr(self.context.config, "DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER"):
+            self.context.config.DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER = (
+                "thumbor.loaders.http_loader"
+            )
+        self.context.modules.importer.import_item(
+            "DISTRIBUTED_COLLAGE_FILTER_HTTP_LOADER"
+        )
         loader = self.context.modules.importer.distributed_collage_filter_http_loader
 
         for i, url in enumerate(self.urls):
-            width = self.image_width if i < len(self.urls) - 1 else self.last_image_width
-            height = self.context.request.height or self.context.transformer.get_target_dimensions()[1]
+            width = (
+                self.image_width if i < len(self.urls) - 1 else self.last_image_width
+            )
+            height = (
+                self.context.request.height
+                or self.context.transformer.get_target_dimensions()[1]
+            )
             params = {
-                'width': int(width),
-                'height': int(height),
-                'image_url': url,
-                'smart': True,
-                'halign': 'center',
-                'valign': 'middle',
-                'filters': ['quality(100)'],
+                "width": int(width),
+                "height": int(height),
+                "image_url": url,
+                "smart": True,
+                "halign": "center",
+                "valign": "middle",
+                "filters": ["quality(100)"],
             }
-            thumbor_host = getattr(self.context.config, 'DISTRIBUTED_COLLAGE_FILTER_THUMBOR_SERVER_URL',
-                '%s://%s' % (
+            thumbor_host = getattr(
+                self.context.config,
+                "DISTRIBUTED_COLLAGE_FILTER_THUMBOR_SERVER_URL",
+                "%s://%s"
+                % (
                     self.context.request_handler.request.protocol,
                     self.context.request_handler.request.host,
                 ),
             )
-            encrypted_url = '%s%s' % (thumbor_host, crypto.generate(**params))
+            encrypted_url = "%s%s" % (thumbor_host, crypto.generate(**params))
             image_ops.append(loader.load(self.context, encrypted_url))
 
         images = yield image_ops
 
         successful = all([image.successful for image in images])
         if not successful:
-            logger.error('Retrieving at least one of the collaged images failed: %s' % (
-                ', '.join([image.error for image in images if not image.successful]),
-            ))
+            logger.error(
+                "Retrieving at least one of the collaged images failed: %s"
+                % (
+                    ", ".join(
+                        [image.error for image in images if not image.successful]
+                    ),
+                )
+            )
             self.callback()
             return
 
-        max_age = min([self.get_max_age(image.metadata.get('Cache-Control'), self.max_age) for image in images])
+        max_age = min(
+            [
+                self.get_max_age(image.metadata.get("Cache-Control"), self.max_age)
+                for image in images
+            ]
+        )
         self.assembly_images(images)
         self.callback()
 
     def get_max_age(self, header, default):
         # 'max-age=86400,public'
-        if header is None or 'max-age' not in header:
+        if header is None or "max-age" not in header:
             return default
 
-        return int(header.split(',')[0].split('=')[-1])
+        return int(header.split(",")[0].split("=")[-1])
 
     def create_engine(self):
         try:
