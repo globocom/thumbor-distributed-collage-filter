@@ -11,9 +11,9 @@
 from preggy import expect
 
 from thumbor_distributed_collage_filter import __version__
-from tests.base import TestCase
+from tests.base import BaseTestCase
 
 
-class VersionTestCase(TestCase):
+class VersionTestCase(BaseTestCase):
     def test_has_proper_version(self):
         expect(__version__).not_to_be_empty()

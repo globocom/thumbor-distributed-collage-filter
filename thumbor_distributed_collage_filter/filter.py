@@ -17,7 +17,6 @@ from os.path import abspath, dirname, isabs, join
 
 import cv2
 import numpy as np
-import tornado.gen
 from thumbor.filters import BaseFilter, filter_method
 from thumbor.loaders import LoaderResult
 from thumbor.point import FocalPoint
@@ -28,10 +27,8 @@ from libthumbor import CryptoURL
 class Filter(BaseFilter):
     MAX_IMAGES = 4
 
-    @filter_method(BaseFilter.String, BaseFilter.String, r"[^\)]+", async=True)
-    @tornado.gen.coroutine
-    def distributed_collage(self, callback, orientation, alignment, urls):
-        self.callback = callback
+    @filter_method(BaseFilter.String, BaseFilter.String, r"[^\)]+")
+    async def distributed_collage(self, orientation, alignment, urls):
         self.orientation = orientation
         self.alignment = alignment
         self.urls = urls.split("|")
@@ -40,17 +37,17 @@ class Filter(BaseFilter):
         total = len(self.urls)
         if total > self.MAX_IMAGES:
             logger.error("filters.distributed_collage: Too many images to join")
-            callback()
+            return
         elif total == 0:
             logger.error("filters.distributed_collage: No images to join")
-            callback()
+            return
         else:
             self.urls = self.urls[: self.MAX_IMAGES]
 
             self.max_age = self.context.config.MAX_AGE
 
             self._calculate_dimensions()
-            yield self._fetch_images()
+            await self._fetch_images()
 
             self.context.request.max_age = self.max_age
 
@@ -62,8 +59,7 @@ class Filter(BaseFilter):
         self.image_width = math.floor(width / len(self.urls))
         self.last_image_width = width - ((len(self.urls) - 1) * self.image_width)
 
-    @tornado.gen.coroutine
-    def _fetch_images(self):
+    async def _fetch_images(self):
         crypto = CryptoURL(key=self.context.server.security_key)
 
         image_ops = []
@@ -103,31 +99,27 @@ class Filter(BaseFilter):
                 ),
             )
             encrypted_url = "%s%s" % (thumbor_host, crypto.generate(**params))
-            image_ops.append(loader.load(self.context, encrypted_url))
+            image_ops.append(await loader.load(self.context, encrypted_url))
 
-        images = yield image_ops
-
-        successful = all([image.successful for image in images])
+        successful = all([image.successful for image in image_ops])
         if not successful:
             logger.error(
                 "Retrieving at least one of the collaged images failed: %s"
                 % (
                     ", ".join(
-                        [image.error for image in images if not image.successful]
+                        [image.error for image in image_ops if not image.successful]
                     ),
                 )
             )
-            self.callback()
             return
 
         max_age = min(
             [
                 self.get_max_age(image.metadata.get("Cache-Control"), self.max_age)
-                for image in images
+                for image in image_ops
             ]
         )
-        self.assembly_images(images)
-        self.callback()
+        self.assembly_images(image_ops)
 
     def get_max_age(self, header, default):
         # 'max-age=86400,public'
