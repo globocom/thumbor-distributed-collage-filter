@@ -18,6 +18,7 @@ tests_require = [
     "ipdb",
     "mock",
     "nose",
+    "pre-commit",
     "preggy",
     "pyssim>=0.4.0",
     "sphinx",
