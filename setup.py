@@ -44,7 +44,7 @@ Distributed collage is a filter for creating side-by-side images.
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Operating System :: Unix",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(),
