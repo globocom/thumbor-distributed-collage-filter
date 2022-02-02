@@ -8,4 +8,4 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2018, Globo.com <thumbor@corp.globo.com>
 
-__version__ = "0.2.2"  # NOQA
+__version__ = "0.3.0-rc.1"  # NOQA
