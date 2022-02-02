@@ -37,5 +37,9 @@ tox:
 format:
 	@black .
 
+publish:
+	@python setup.py sdist
+	@twine upload dist/*
+
 #docs:
 	#@cd thumbor_distributed_collage_filter/docs && make html && open _build/html/index.html

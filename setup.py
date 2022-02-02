@@ -23,6 +23,7 @@ tests_require = [
     "pyssim>=0.4.0",
     "sphinx",
     "tox",
+    "twine",
     "yanc",
 ]
 
