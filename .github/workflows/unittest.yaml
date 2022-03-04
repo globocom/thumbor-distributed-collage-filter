@@ -16,4 +16,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
-      - run: make setup && make test
+      - name: Install dependencies
+        run: sudo apt install -y libcurl4-openssl-dev libssl-dev python-opencv
+      - run: make setup && pip install opencv-python==4.5.5.62 && make test
