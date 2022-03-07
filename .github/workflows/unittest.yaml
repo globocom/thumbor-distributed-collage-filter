@@ -18,4 +18,4 @@ jobs:
           architecture: x64
       - name: Install dependencies
         run: sudo apt install -y libcurl4-openssl-dev libssl-dev python3-opencv
-      - run: make setup && pip install opencv-python==4.5.5.62 && make test
+      - run: make setup && pip install opencv-python==4.2.0.32 && make test
